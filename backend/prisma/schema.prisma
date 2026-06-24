@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  CLIENTE
+  COMERCIO
+  ADMINISTRADOR
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  PENDIENTE
+  SUSPENDIDO
+}
+
+enum EstadoPack {
+  DISPONIBLE
+  AGOTADO
+  EXPIRADO
+}
+
+enum EstadoReserva {
+  PENDIENTE_RETIRO
+  COMPLETADA
+  EXPIRADA
+  CANCELADA
+}
+
+model Usuario {
+  id              Int            @id @default(autoincrement()) @map("id_usuario")
+  nombre          String         @db.VarChar(100)
+  correo          String         @unique @db.VarChar(100)
+  contrasenaHash  String         @map("contrasena_hash") @db.VarChar(255)
+  rol             Rol
+  estado          EstadoUsuario  @default(ACTIVO)
+  fechaRegistro   DateTime       @default(now()) @map("fecha_registro")
+
+  comercioPerfil  ComercioPerfil?
+  clientePerfil   ClientePerfil?
+  logsAuditoria   LogAuditoria[]
+  notificaciones  Notificacion[]
+
+  @@map("usuario")
+}
+
+model ComercioPerfil {
+  id               Int      @id @default(autoincrement()) @map("id_comercio")
+  usuarioId        Int      @unique @map("id_usuario")
+  nombreComercial  String   @map("nombre_comercial") @db.VarChar(100)
+  direccionFisica  String   @map("direccion_fisica") @db.VarChar(255)
+  ciudadZona       String   @map("ciudad_zona") @db.VarChar(100)
+  latitudEstatica  Decimal? @map("latitud_estatica") @db.Decimal(10, 8)
+  longitudEstatica Decimal? @map("longitud_estatica") @db.Decimal(11, 8)
+  telefonoContacto String   @map("telefono_contacto") @db.VarChar(20)
+
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id])
+  packs            PackSorpresa[]
+  historialFinanciero HistorialFinanciero[]
+
+  @@map("comercio_perfil")
+}
+
+model ClientePerfil {
+  id              Int      @id @default(autoincrement()) @map("id_cliente")
+  usuarioId       Int      @unique @map("id_usuario")
+  telefono        String   @db.VarChar(20)
+  zonaPreferente  String   @map("zona_preferente") @db.VarChar(100)
+
+  usuario         Usuario  @relation(fields: [usuarioId], references: [id])
+  reservas        Reserva[]
+
+  @@map("cliente_perfil")
+}
+
+model PackSorpresa {
+  id                Int         @id @default(autoincrement()) @map("id_pack")
+  comercioId        Int         @map("id_comercio")
+  descripcion       String      @db.Text
+  precioOriginal    Decimal     @map("precio_original") @db.Decimal(10, 2)
+  precioOferta      Decimal     @map("precio_oferta") @db.Decimal(10, 2)
+  cantidadDisponible Int        @map("cantidad_disponible")
+  horaLimiteRetiro  DateTime    @map("hora_limite_retiro")
+  fechaPublicacion  DateTime    @default(now()) @map("fecha_publicacion")
+  estadoPack        EstadoPack  @default(DISPONIBLE) @map("estado_pack")
+
+  comercio          ComercioPerfil @relation(fields: [comercioId], references: [id])
+  reservas          Reserva[]
+
+  @@map("pack_sorpresa")
+}
+
+model Reserva {
+  id                 Int            @id @default(autoincrement()) @map("id_reserva")
+  clienteId          Int            @map("id_cliente")
+  packId             Int            @map("id_pack")
+  codigoReserva      String         @unique @map("codigo_reserva") @db.VarChar(10)
+  cantidadReservada  Int            @map("cantidad_reservada")
+  montoTotal         Decimal        @map("monto_total") @db.Decimal(10, 2)
+  estadoReserva      EstadoReserva  @default(PENDIENTE_RETIRO) @map("estado_reserva")
+  fechaReserva       DateTime       @default(now()) @map("fecha_reserva")
+  fechaActualizacion DateTime       @updatedAt @map("fecha_actualizacion")
+
+  cliente            ClientePerfil  @relation(fields: [clienteId], references: [id])
+  pack               PackSorpresa   @relation(fields: [packId], references: [id])
+  historialFinanciero HistorialFinanciero?
+
+  @@map("reserva")
+}
+
+model HistorialFinanciero {
+  id                     Int      @id @default(autoincrement()) @map("id_registro")
+  reservaId              Int      @unique @map("id_reserva")
+  comercioId             Int      @map("id_comercio")
+  montoVenta             Decimal  @map("monto_venta") @db.Decimal(10, 2)
+  montoComisionPlataforma Decimal @map("monto_comision_plataforma") @db.Decimal(10, 2)
+  metodoPagoPresencial   String   @map("metodo_pago_presencial") @db.VarChar(30)
+  fechaRegistro          DateTime @default(now()) @map("fecha_registro")
+
+  reserva                Reserva          @relation(fields: [reservaId], references: [id])
+  comercio               ComercioPerfil   @relation(fields: [comercioId], references: [id])
+
+  @@map("historial_financiero")
+}
+
+model LogAuditoria {
+  id               Int      @id @default(autoincrement()) @map("id_log")
+  usuarioActorId   Int      @map("id_usuario_actor")
+  accionRealizada  String   @map("accion_realizada") @db.VarChar(100)
+  detalles         String   @db.Text
+  fechaHora        DateTime @default(now()) @map("fecha_hora")
+
+  usuarioActor     Usuario  @relation(fields: [usuarioActorId], references: [id])
+
+  @@map("log_auditoria")
+}
+
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int      @map("id_usuario")
+  titulo      String   @db.VarChar(200)
+  mensaje     String   @db.Text
+  leida       Boolean  @default(false)
+  packId      Int?     @map("id_pack")
+  fechaCreacion DateTime @default(now()) @map("fecha_creacion")
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("notificacion")
+}
