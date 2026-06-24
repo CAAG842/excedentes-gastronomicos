@@ -38,6 +38,22 @@ export default function Usuarios() {
     cargar();
   }
 
+  function verDocumento(filename) {
+    const token = localStorage.getItem('token');
+    fetch(`/api/uploads/${filename}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('No se pudo cargar el documento');
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      })
+      .catch(() => setMensaje('Error al abrir el documento'));
+  }
+
   const colores = { ACTIVO: 'bg-green-100 text-green-800', PENDIENTE: 'bg-yellow-100 text-yellow-800', SUSPENDIDO: 'bg-red-100 text-red-800' };
 
   return (
@@ -81,10 +97,8 @@ export default function Usuarios() {
                   <td className="px-4 py-3 text-sm text-gray-600">{u.comercioPerfil?.nombreComercial || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     {u.comercioPerfil?.documentoHabilitacion ? (
-                      <a
-                        href={`/api/uploads/${u.comercioPerfil.documentoHabilitacion}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => verDocumento(u.comercioPerfil.documentoHabilitacion)}
                         className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -92,7 +106,7 @@ export default function Usuarios() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                         Ver
-                      </a>
+                      </button>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}

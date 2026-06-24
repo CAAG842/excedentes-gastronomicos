@@ -47,8 +47,9 @@ export default function RegistroCliente() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input name="contrasena" type="password" value={form.contrasena} onChange={handleChange} required minLength={6}
+            <input name="contrasena" type="password" value={form.contrasena} onChange={handleChange} required minLength={8}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+            <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, una mayúscula, una minúscula y un número.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>

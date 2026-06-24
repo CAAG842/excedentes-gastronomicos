@@ -9,15 +9,46 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+function validarContrasena(contrasena) {
+  if (contrasena.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+  if (!/[A-Z]/.test(contrasena)) return 'La contraseña debe incluir al menos una letra mayúscula.';
+  if (!/[a-z]/.test(contrasena)) return 'La contraseña debe incluir al menos una letra minúscula.';
+  if (!/[0-9]/.test(contrasena)) return 'La contraseña debe incluir al menos un número.';
+  return null;
+}
+
 export default async function authRoutes(fastify) {
 
+  const authRateLimit = {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '15 minutes',
+        errorResponseBuilder: () => ({ error: 'Demasiados intentos. Intente nuevamente en 15 minutos.' })
+      }
+    }
+  };
+
+  const loginRateLimit = {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '15 minutes',
+        errorResponseBuilder: () => ({ error: 'Demasiados intentos de inicio de sesión. Intente nuevamente en 15 minutos.' })
+      }
+    }
+  };
+
   // CU-01: Cliente - Registrarse
-  fastify.post('/api/auth/registro/cliente', async (request, reply) => {
+  fastify.post('/api/auth/registro/cliente', authRateLimit, async (request, reply) => {
     const { nombre, correo, contrasena, telefono, zonaPreferente } = request.body;
 
     if (!nombre || !correo || !contrasena || !telefono || !zonaPreferente) {
       return reply.code(400).send({ error: 'Todos los campos son obligatorios' });
     }
+
+    const errorContrasena = validarContrasena(contrasena);
+    if (errorContrasena) return reply.code(400).send({ error: errorContrasena });
 
     const existente = await prisma.usuario.findUnique({ where: { correo } });
     if (existente) {
@@ -47,7 +78,7 @@ export default async function authRoutes(fastify) {
   });
 
   // CU-02: Comercio Gastronómico - Registrarse (multipart con documento)
-  fastify.post('/api/auth/registro/comercio', async (request, reply) => {
+  fastify.post('/api/auth/registro/comercio', authRateLimit, async (request, reply) => {
     const parts = request.parts();
     const fields = {};
     let documentoFilename = null;
@@ -82,6 +113,9 @@ export default async function authRoutes(fastify) {
       return reply.code(400).send({ error: 'Todos los campos son obligatorios' });
     }
 
+    const errorContrasena = validarContrasena(contrasena);
+    if (errorContrasena) return reply.code(400).send({ error: errorContrasena });
+
     if (!documentoFilename) {
       return reply.code(400).send({ error: 'El documento de habilitación es obligatorio' });
     }
@@ -114,7 +148,7 @@ export default async function authRoutes(fastify) {
   });
 
   // CU-03: Usuario (General) - Iniciar Sesión
-  fastify.post('/api/auth/login', async (request, reply) => {
+  fastify.post('/api/auth/login', loginRateLimit, async (request, reply) => {
     const { correo, contrasena } = request.body;
 
     if (!correo || !contrasena) {
