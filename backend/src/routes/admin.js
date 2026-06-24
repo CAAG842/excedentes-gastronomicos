@@ -5,21 +5,31 @@ export default async function adminRoutes(fastify) {
 
   // CU-12: Administrador - Gestionar Usuarios y Auditoría
   fastify.get('/api/admin/usuarios', { preHandler: authorize('ADMINISTRADOR') }, async (request, reply) => {
-    const { estado, rol } = request.query;
+    const { estado, rol, pagina = '1', limite = '20' } = request.query;
     const where = {};
     if (estado) where.estado = estado;
     if (rol) where.rol = rol;
 
-    const usuarios = await prisma.usuario.findMany({
-      where,
-      select: {
-        id: true, nombre: true, correo: true, rol: true, estado: true, fechaRegistro: true,
-        comercioPerfil: true,
-        clientePerfil: true
-      },
-      orderBy: { fechaRegistro: 'desc' }
-    });
-    reply.send(usuarios);
+    const page = Math.max(1, parseInt(pagina));
+    const take = Math.min(50, Math.max(1, parseInt(limite)));
+    const skip = (page - 1) * take;
+
+    const [usuarios, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where,
+        select: {
+          id: true, nombre: true, correo: true, rol: true, estado: true, fechaRegistro: true,
+          comercioPerfil: true,
+          clientePerfil: true
+        },
+        orderBy: { fechaRegistro: 'desc' },
+        skip,
+        take
+      }),
+      prisma.usuario.count({ where })
+    ]);
+
+    reply.send({ datos: usuarios, total, pagina: page, totalPaginas: Math.ceil(total / take) });
   });
 
   // Aprobar comercio
@@ -128,14 +138,24 @@ export default async function adminRoutes(fastify) {
 
   // Log de auditoría
   fastify.get('/api/admin/auditoria', { preHandler: authorize('ADMINISTRADOR') }, async (request, reply) => {
-    const logs = await prisma.logAuditoria.findMany({
-      include: {
-        usuarioActor: { select: { nombre: true, correo: true, rol: true } }
-      },
-      orderBy: { fechaHora: 'desc' },
-      take: 100
-    });
-    reply.send(logs);
+    const { pagina = '1', limite = '20' } = request.query;
+    const page = Math.max(1, parseInt(pagina));
+    const take = Math.min(50, Math.max(1, parseInt(limite)));
+    const skip = (page - 1) * take;
+
+    const [logs, total] = await Promise.all([
+      prisma.logAuditoria.findMany({
+        include: {
+          usuarioActor: { select: { nombre: true, correo: true, rol: true } }
+        },
+        orderBy: { fechaHora: 'desc' },
+        skip,
+        take
+      }),
+      prisma.logAuditoria.count()
+    ]);
+
+    reply.send({ datos: logs, total, pagina: page, totalPaginas: Math.ceil(total / take) });
   });
 
   // Dashboard admin global

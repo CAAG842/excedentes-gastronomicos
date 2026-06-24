@@ -5,13 +5,18 @@ export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
 
-  useEffect(() => { cargar(); }, [filtro]);
+  useEffect(() => { setPagina(1); }, [filtro]);
+  useEffect(() => { cargar(); }, [filtro, pagina]);
 
   async function cargar() {
-    const params = filtro ? `?estado=${filtro}` : '';
-    const data = await api.get(`/admin/usuarios${params}`);
-    setUsuarios(data);
+    const params = new URLSearchParams({ pagina });
+    if (filtro) params.set('estado', filtro);
+    const data = await api.get(`/admin/usuarios?${params}`);
+    setUsuarios(data.datos);
+    setTotalPaginas(data.totalPaginas);
   }
 
   async function aprobar(id) {
@@ -132,6 +137,17 @@ export default function Usuarios() {
             </tbody>
           </table>
         </div>
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+            <p className="text-sm text-gray-600">Página {pagina} de {totalPaginas}</p>
+            <div className="flex gap-2">
+              <button onClick={() => setPagina(p => p - 1)} disabled={pagina <= 1}
+                className="px-3 py-1 text-sm bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+              <button onClick={() => setPagina(p => p + 1)} disabled={pagina >= totalPaginas}
+                className="px-3 py-1 text-sm bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

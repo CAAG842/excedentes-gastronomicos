@@ -145,6 +145,42 @@ export default async function clienteRoutes(fastify) {
     reply.send(reservas);
   });
 
+  // Cancelar reserva pendiente
+  fastify.patch('/api/reservas/:id/cancelar', { preHandler: authorize('CLIENTE') }, async (request, reply) => {
+    const reservaId = parseInt(request.params.id);
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      const reserva = await tx.reserva.findUnique({
+        where: { id: reservaId },
+        include: { pack: true }
+      });
+
+      if (!reserva || reserva.clienteId !== request.user.perfilId) {
+        throw new Error('Reserva no encontrada');
+      }
+      if (reserva.estadoReserva !== 'PENDIENTE_RETIRO') {
+        throw new Error('Solo se pueden cancelar reservas pendientes de retiro');
+      }
+
+      const actualizada = await tx.reserva.update({
+        where: { id: reservaId },
+        data: { estadoReserva: 'CANCELADA' }
+      });
+
+      await tx.packSorpresa.update({
+        where: { id: reserva.packId },
+        data: {
+          cantidadDisponible: { increment: reserva.cantidadReservada },
+          estadoPack: 'DISPONIBLE'
+        }
+      });
+
+      return actualizada;
+    });
+
+    reply.send({ mensaje: 'Reserva cancelada exitosamente', reserva: resultado });
+  });
+
   // Notificaciones del cliente
   fastify.get('/api/notificaciones', { preHandler: authorize('CLIENTE') }, async (request, reply) => {
     const notificaciones = await prisma.notificacion.findMany({

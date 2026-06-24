@@ -3,10 +3,15 @@ import { api } from '../../services/api';
 
 export default function Auditoria() {
   const [logs, setLogs] = useState([]);
+  const [pagina, setPagina] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
 
   useEffect(() => {
-    api.get('/admin/auditoria').then(setLogs).catch(() => {});
-  }, []);
+    api.get(`/admin/auditoria?pagina=${pagina}`).then(data => {
+      setLogs(data.datos);
+      setTotalPaginas(data.totalPaginas);
+    }).catch(() => {});
+  }, [pagina]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -38,6 +43,17 @@ export default function Auditoria() {
               </tbody>
             </table>
           </div>
+          {totalPaginas > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+              <p className="text-sm text-gray-600">Página {pagina} de {totalPaginas}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setPagina(p => p - 1)} disabled={pagina <= 1}
+                  className="px-3 py-1 text-sm bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+                <button onClick={() => setPagina(p => p + 1)} disabled={pagina >= totalPaginas}
+                  className="px-3 py-1 text-sm bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -3,10 +3,24 @@ import { api } from '../../services/api';
 
 export default function MisReservas() {
   const [reservas, setReservas] = useState([]);
+  const [mensaje, setMensaje] = useState('');
 
-  useEffect(() => {
+  useEffect(() => { cargar(); }, []);
+
+  async function cargar() {
     api.get('/reservas').then(setReservas).catch(() => {});
-  }, []);
+  }
+
+  async function cancelar(id) {
+    if (!confirm('¿Estás seguro de cancelar esta reserva?')) return;
+    try {
+      await api.patch(`/reservas/${id}/cancelar`);
+      setMensaje('Reserva cancelada exitosamente');
+      cargar();
+    } catch (err) {
+      setMensaje(err.message);
+    }
+  }
 
   const colores = {
     PENDIENTE_RETIRO: 'bg-yellow-100 text-yellow-800',
@@ -25,6 +39,8 @@ export default function MisReservas() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Mis Reservas</h1>
+
+      {mensaje && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">{mensaje}</div>}
 
       {reservas.length === 0 ? (
         <p className="text-center text-gray-400 py-16">No tienes reservas aún</p>
@@ -50,12 +66,20 @@ export default function MisReservas() {
                   <p className="text-2xl font-bold text-emerald-700">Gs. {Number(r.montoTotal).toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Cant: {r.cantidadReservada}</p>
                   <p className="text-sm text-gray-500">{new Date(r.fechaReserva).toLocaleString()}</p>
-                  {r.estadoReserva === 'PENDIENTE_RETIRO' && r.pack?.comercio?.latitudEstatica && (
-                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${r.pack.comercio.latitudEstatica},${r.pack.comercio.longitudEstatica}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="inline-block mt-2 text-blue-600 text-sm font-medium hover:underline">
-                      Cómo llegar
-                    </a>
+                  {r.estadoReserva === 'PENDIENTE_RETIRO' && (
+                    <div className="flex flex-col items-end gap-2 mt-2">
+                      {r.pack?.comercio?.latitudEstatica && (
+                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${r.pack.comercio.latitudEstatica},${r.pack.comercio.longitudEstatica}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-blue-600 text-sm font-medium hover:underline">
+                          Cómo llegar
+                        </a>
+                      )}
+                      <button onClick={() => cancelar(r.id)}
+                        className="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        Cancelar reserva
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

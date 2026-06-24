@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../services/api';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 export default function Notificaciones() {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -7,6 +8,20 @@ export default function Notificaciones() {
   useEffect(() => {
     api.get('/notificaciones').then(setNotificaciones).catch(() => {});
   }, []);
+
+  const onWsMessage = useCallback((data) => {
+    if (data.tipo === 'NUEVA_OFERTA') {
+      setNotificaciones(prev => [{
+        id: Date.now(),
+        titulo: data.titulo,
+        mensaje: data.mensaje,
+        leida: false,
+        fechaCreacion: new Date().toISOString()
+      }, ...prev]);
+    }
+  }, []);
+
+  useWebSocket(onWsMessage);
 
   async function marcarLeida(id) {
     await api.patch(`/notificaciones/${id}`);

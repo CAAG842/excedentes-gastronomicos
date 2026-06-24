@@ -1,5 +1,6 @@
 import prisma from '../config/database.js';
 import { authorize } from '../middleware/auth.js';
+import { notificarUsuarios } from '../utils/wsClients.js';
 
 export default async function comercioRoutes(fastify) {
 
@@ -83,14 +84,22 @@ export default async function comercioRoutes(fastify) {
     });
 
     if (clientesZona.length > 0) {
+      const titulo = `Nueva oferta en ${perfil.ciudadZona}`;
+      const mensaje = `${perfil.nombreComercial} publicó un pack sorpresa: ${descripcion} a Gs. ${oferta.toLocaleString()}`;
+
       await prisma.notificacion.createMany({
         data: clientesZona.map(cliente => ({
           usuarioId: cliente.usuarioId,
-          titulo: `Nueva oferta en ${perfil.ciudadZona}`,
-          mensaje: `${perfil.nombreComercial} publicó un pack sorpresa: ${descripcion} a Gs. ${oferta.toLocaleString()}`,
+          titulo,
+          mensaje,
           packId: pack.id
         }))
       });
+
+      notificarUsuarios(
+        clientesZona.map(c => c.usuarioId),
+        { tipo: 'NUEVA_OFERTA', titulo, mensaje, packId: pack.id }
+      );
     }
 
     reply.code(201).send({ mensaje: 'Pack sorpresa publicado exitosamente', pack });
