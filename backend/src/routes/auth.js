@@ -32,7 +32,7 @@ export default async function authRoutes(fastify) {
   const loginRateLimit = {
     config: {
       rateLimit: {
-        max: 5,
+        max: 15,
         timeWindow: '15 minutes',
         errorResponseBuilder: () => ({ error: 'Demasiados intentos de inicio de sesión. Intente nuevamente en 15 minutos.' })
       }
@@ -149,7 +149,7 @@ export default async function authRoutes(fastify) {
 
   // CU-03: Usuario (General) - Iniciar Sesión
   fastify.post('/api/auth/login', loginRateLimit, async (request, reply) => {
-    const { correo, contrasena } = request.body;
+    const { correo, contrasena } = request.body || {};
 
     if (!correo || !contrasena) {
       return reply.code(400).send({ error: 'Correo y contraseña son obligatorios' });
