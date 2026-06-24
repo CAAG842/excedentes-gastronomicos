@@ -22,7 +22,8 @@ const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 const fastify = Fastify({ logger: true });
 
-await fastify.register(cors, { origin: true });
+const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true;
+await fastify.register(cors, { origin: allowedOrigins });
 await fastify.register(jwt, { secret: process.env.JWT_SECRET });
 await fastify.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
 await fastify.register(rateLimit, {

@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('token');
@@ -10,7 +10,14 @@ async function request(endpoint, options = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
   const data = await res.json();
 
-  if (!res.ok) throw new Error(data.error || 'Error en la solicitud');
+  if (!res.ok) {
+    if (res.status === 401 && token) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = '/login';
+    }
+    throw new Error(data.error || 'Error en la solicitud');
+  }
   return data;
 }
 

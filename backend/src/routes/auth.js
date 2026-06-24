@@ -181,7 +181,7 @@ export default async function authRoutes(fastify) {
       correo: usuario.correo,
       rol: usuario.rol,
       perfilId: usuario.clientePerfil?.id || usuario.comercioPerfil?.id || null
-    });
+    }, { expiresIn: '24h' });
 
     reply.send({
       token,

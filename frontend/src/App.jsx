@@ -22,6 +22,7 @@ import Perfil from './pages/comercio/Perfil';
 import Usuarios from './pages/admin/Usuarios';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import Auditoria from './pages/admin/Auditoria';
+import NotFound from './pages/NotFound';
 
 function AppRoutes() {
   const { usuario } = useAuth();
@@ -52,7 +53,7 @@ function AppRoutes() {
         usuario.rol === 'COMERCIO' ? '/comercio/packs' :
         '/admin/usuarios'
       } />} />
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
