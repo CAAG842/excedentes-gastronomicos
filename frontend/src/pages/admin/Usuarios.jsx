@@ -32,6 +32,12 @@ export default function Usuarios() {
     cargar();
   }
 
+  async function reactivar(id) {
+    await api.patch(`/admin/usuarios/${id}/reactivar`);
+    setMensaje('Cuenta reactivada exitosamente');
+    cargar();
+  }
+
   const colores = { ACTIVO: 'bg-green-100 text-green-800', PENDIENTE: 'bg-yellow-100 text-yellow-800', SUSPENDIDO: 'bg-red-100 text-red-800' };
 
   return (
@@ -101,6 +107,9 @@ export default function Usuarios() {
                       )}
                       {u.estado === 'ACTIVO' && u.rol !== 'ADMINISTRADOR' && (
                         <button onClick={() => suspender(u.id)} className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700">Suspender</button>
+                      )}
+                      {u.estado === 'SUSPENDIDO' && (
+                        <button onClick={() => reactivar(u.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Reactivar</button>
                       )}
                     </div>
                   </td>

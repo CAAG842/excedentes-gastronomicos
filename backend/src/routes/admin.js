@@ -96,6 +96,36 @@ export default async function adminRoutes(fastify) {
     reply.send({ mensaje: 'Cuenta suspendida', usuario: resultado });
   });
 
+  // Reactivar cuenta suspendida
+  fastify.patch('/api/admin/usuarios/:id/reactivar', { preHandler: authorize('ADMINISTRADOR') }, async (request, reply) => {
+    const userId = parseInt(request.params.id);
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      const usuario = await tx.usuario.findUnique({ where: { id: userId } });
+
+      if (!usuario || usuario.estado !== 'SUSPENDIDO') {
+        throw new Error('Solo se pueden reactivar cuentas suspendidas');
+      }
+
+      const actualizado = await tx.usuario.update({
+        where: { id: userId },
+        data: { estado: 'ACTIVO' }
+      });
+
+      await tx.logAuditoria.create({
+        data: {
+          usuarioActorId: request.user.id,
+          accionRealizada: 'REACTIVAR_CUENTA',
+          detalles: `Cuenta reactivada: ${actualizado.nombre} (ID: ${actualizado.id})`
+        }
+      });
+
+      return actualizado;
+    });
+
+    reply.send({ mensaje: 'Cuenta reactivada exitosamente', usuario: resultado });
+  });
+
   // Log de auditoría
   fastify.get('/api/admin/auditoria', { preHandler: authorize('ADMINISTRADOR') }, async (request, reply) => {
     const logs = await prisma.logAuditoria.findMany({
