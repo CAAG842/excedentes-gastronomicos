@@ -1,5 +1,13 @@
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import prisma from '../config/database.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 export default async function authRoutes(fastify) {
 
@@ -38,12 +46,44 @@ export default async function authRoutes(fastify) {
     });
   });
 
-  // CU-02: Comercio Gastronómico - Registrarse
+  // CU-02: Comercio Gastronómico - Registrarse (multipart con documento)
   fastify.post('/api/auth/registro/comercio', async (request, reply) => {
-    const { nombre, correo, contrasena, nombreComercial, direccionFisica, ciudadZona, telefonoContacto } = request.body;
+    const parts = request.parts();
+    const fields = {};
+    let documentoFilename = null;
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        if (part.fieldname === 'documento') {
+          const ext = path.extname(part.filename).toLowerCase();
+          const allowed = ['.pdf', '.jpg', '.jpeg', '.png'];
+          if (!allowed.includes(ext)) {
+            return reply.code(400).send({ error: 'Formato de documento no permitido. Use PDF, JPG o PNG.' });
+          }
+          documentoFilename = `${randomUUID()}${ext}`;
+          const filePath = path.join(uploadsDir, documentoFilename);
+          const writeStream = fs.createWriteStream(filePath);
+          await part.file.pipe(writeStream);
+          await new Promise((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+          });
+        } else {
+          await part.toBuffer();
+        }
+      } else {
+        fields[part.fieldname] = part.value;
+      }
+    }
+
+    const { nombre, correo, contrasena, nombreComercial, direccionFisica, ciudadZona, telefonoContacto } = fields;
 
     if (!nombre || !correo || !contrasena || !nombreComercial || !direccionFisica || !ciudadZona || !telefonoContacto) {
       return reply.code(400).send({ error: 'Todos los campos son obligatorios' });
+    }
+
+    if (!documentoFilename) {
+      return reply.code(400).send({ error: 'El documento de habilitación es obligatorio' });
     }
 
     const existente = await prisma.usuario.findUnique({ where: { correo } });
@@ -61,7 +101,7 @@ export default async function authRoutes(fastify) {
         rol: 'COMERCIO',
         estado: 'PENDIENTE',
         comercioPerfil: {
-          create: { nombreComercial, direccionFisica, ciudadZona, telefonoContacto }
+          create: { nombreComercial, direccionFisica, ciudadZona, telefonoContacto, documentoHabilitacion: documentoFilename }
         }
       },
       include: { comercioPerfil: true }

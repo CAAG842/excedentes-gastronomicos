@@ -6,23 +6,53 @@ const ZONAS = ['Centro', 'Villa Morra', 'Sajonia', 'San Pablo', 'Lambaré', 'San
 
 export default function RegistroComercio() {
   const [form, setForm] = useState({ nombre: '', correo: '', contrasena: '', nombreComercial: '', direccionFisica: '', ciudadZona: '', telefonoContacto: '' });
+  const [documento, setDocumento] = useState(null);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
+  const [enviando, setEnviando] = useState(false);
   const navigate = useNavigate();
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return setDocumento(null);
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowed.includes(file.type)) {
+      setError('Formato no permitido. Solo PDF, JPG o PNG.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('El archivo no debe superar los 5 MB.');
+      e.target.value = '';
+      return;
+    }
+    setError('');
+    setDocumento(file);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!documento) {
+      setError('Debe adjuntar un documento de habilitación.');
+      return;
+    }
+    setEnviando(true);
     try {
-      const data = await api.post('/auth/registro/comercio', form);
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, val]) => formData.append(key, val));
+      formData.append('documento', documento);
+      const data = await api.post('/auth/registro/comercio', formData);
       setExito(data.mensaje);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -77,8 +107,22 @@ export default function RegistroComercio() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
           </div>
-          <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 transition-colors">
-            Solicitar Registro
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Documento de habilitación</label>
+            <p className="text-xs text-gray-500 mb-2">Suba un documento que acredite la habilitación para venta de alimentos (registro sanitario, patente municipal, etc.). Formatos: PDF, JPG, PNG. Máx. 5 MB.</p>
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange}
+              className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" />
+            {documento && (
+              <p className="mt-2 text-sm text-emerald-600 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {documento.name}
+              </p>
+            )}
+          </div>
+          <button type="submit" disabled={enviando} className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            {enviando ? 'Enviando...' : 'Solicitar Registro'}
           </button>
         </form>
         <p className="text-center mt-4 text-sm text-gray-500">

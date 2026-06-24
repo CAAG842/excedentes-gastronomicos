@@ -59,6 +59,7 @@ export default function Usuarios() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comercio</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
               </tr>
             </thead>
@@ -72,6 +73,24 @@ export default function Usuarios() {
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colores[u.estado]}`}>{u.estado}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{u.comercioPerfil?.nombreComercial || '-'}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {u.comercioPerfil?.documentoHabilitacion ? (
+                      <a
+                        href={`/api/uploads/${u.comercioPerfil.documentoHabilitacion}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Ver
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {u.estado === 'PENDIENTE' && (

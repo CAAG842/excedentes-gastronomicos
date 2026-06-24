@@ -57,7 +57,8 @@ model ComercioPerfil {
   ciudadZona       String   @map("ciudad_zona") @db.VarChar(100)
   latitudEstatica  Decimal? @map("latitud_estatica") @db.Decimal(10, 8)
   longitudEstatica Decimal? @map("longitud_estatica") @db.Decimal(11, 8)
-  telefonoContacto String   @map("telefono_contacto") @db.VarChar(20)
+  telefonoContacto       String   @map("telefono_contacto") @db.VarChar(20)
+  documentoHabilitacion  String?  @map("documento_habilitacion") @db.VarChar(255)
 
   usuario          Usuario  @relation(fields: [usuarioId], references: [id])
   packs            PackSorpresa[]
