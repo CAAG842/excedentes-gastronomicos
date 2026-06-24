@@ -194,4 +194,37 @@ export default async function authRoutes(fastify) {
       }
     });
   });
+
+  // Cambiar contraseña (usuario autenticado)
+  fastify.post('/api/auth/cambiar-contrasena', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Token no válido o expirado' });
+    }
+
+    const { contrasenaActual, contrasenaNueva } = request.body;
+
+    if (!contrasenaActual || !contrasenaNueva) {
+      return reply.code(400).send({ error: 'Ambos campos son obligatorios' });
+    }
+
+    const errorValidacion = validarContrasena(contrasenaNueva);
+    if (errorValidacion) return reply.code(400).send({ error: errorValidacion });
+
+    const usuario = await prisma.usuario.findUnique({ where: { id: request.user.id } });
+
+    const valida = await bcrypt.compare(contrasenaActual, usuario.contrasenaHash);
+    if (!valida) {
+      return reply.code(400).send({ error: 'La contraseña actual es incorrecta' });
+    }
+
+    const hash = await bcrypt.hash(contrasenaNueva, 10);
+    await prisma.usuario.update({
+      where: { id: request.user.id },
+      data: { contrasenaHash: hash }
+    });
+
+    reply.send({ mensaje: 'Contraseña actualizada exitosamente' });
+  });
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../../services/api';
 import { exportAdminExcel, exportAdminPDF } from '../../utils/exportDashboard';
 
@@ -21,6 +22,15 @@ export default function DashboardAdmin() {
   }
 
   if (!data) return <div className="text-center py-16 text-gray-400">Cargando...</div>;
+
+  const chartData = data.ventasMensuales
+    ? Object.entries(data.ventasMensuales).map(([mes, vals]) => ({
+        mes: mes.slice(5),
+        ventas: vals.ventas,
+        comisiones: vals.comisiones,
+        transacciones: vals.transacciones
+      }))
+    : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -49,7 +59,8 @@ export default function DashboardAdmin() {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card label="Total Usuarios" value={data.totalUsuarios} />
         <Card label="Comercios Registrados" value={data.totalComercios} />
         <Card label="Clientes Registrados" value={data.totalClientes} />
@@ -61,6 +72,22 @@ export default function DashboardAdmin() {
         <Card label="Ventas Totales" value={`Gs. ${data.ventasTotal.toLocaleString()}`} />
         <Card label="Comisiones Acumuladas" value={`Gs. ${data.comisionesTotal.toLocaleString()}`} />
       </div>
+
+      {chartData.length > 0 && (
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Ventas y Comisiones Mensuales</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis />
+              <Tooltip formatter={(val) => `Gs. ${val.toLocaleString()}`} />
+              <Bar dataKey="ventas" fill="#059669" name="Ventas" />
+              <Bar dataKey="comisiones" fill="#f59e0b" name="Comisiones" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import CambiarContrasena from '../../components/CambiarContrasena';
 
 export default function Perfil() {
   const [perfil, setPerfil] = useState(null);
@@ -72,6 +73,10 @@ export default function Perfil() {
           Guardar Cambios
         </button>
       </form>
+
+      <div className="mt-6">
+        <CambiarContrasena />
+      </div>
     </div>
   );
 }

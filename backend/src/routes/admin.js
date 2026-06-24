@@ -174,6 +174,15 @@ export default async function adminRoutes(fastify) {
     const comisionesTotal = historial.reduce((sum, h) => sum + Number(h.montoComisionPlataforma), 0);
     const ventasTotal = historial.reduce((sum, h) => sum + Number(h.montoVenta), 0);
 
+    const ventasMensuales = {};
+    historial.forEach(h => {
+      const mes = h.fechaRegistro.toISOString().slice(0, 7);
+      if (!ventasMensuales[mes]) ventasMensuales[mes] = { ventas: 0, comisiones: 0, transacciones: 0 };
+      ventasMensuales[mes].ventas += Number(h.montoVenta);
+      ventasMensuales[mes].comisiones += Number(h.montoComisionPlataforma);
+      ventasMensuales[mes].transacciones += 1;
+    });
+
     reply.send({
       totalUsuarios,
       totalComercios,
@@ -184,7 +193,8 @@ export default async function adminRoutes(fastify) {
       reservasCompletadas,
       comisionesTotal,
       ventasTotal,
-      kgRescatados: reservasCompletadas * 0.8
+      kgRescatados: reservasCompletadas * 0.8,
+      ventasMensuales
     });
   });
 }

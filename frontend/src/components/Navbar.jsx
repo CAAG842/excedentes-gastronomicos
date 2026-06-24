@@ -1,9 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 
 export default function Navbar() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
+  const [sinLeer, setSinLeer] = useState(0);
+
+  useEffect(() => {
+    if (usuario?.rol === 'CLIENTE') {
+      api.get('/notificaciones').then(data => {
+        setSinLeer(data.filter(n => !n.leida).length);
+      }).catch(() => {});
+    }
+  }, [usuario]);
 
   function handleLogout() {
     logout();
@@ -14,7 +25,7 @@ export default function Navbar() {
     CLIENTE: [
       { to: '/cliente/catalogo', label: 'Catálogo' },
       { to: '/cliente/reservas', label: 'Mis Reservas' },
-      { to: '/cliente/notificaciones', label: 'Notificaciones' },
+      { to: '/cliente/notificaciones', label: 'Notificaciones', badge: sinLeer },
       { to: '/cliente/perfil', label: 'Perfil' },
     ],
     COMERCIO: [
@@ -45,9 +56,14 @@ export default function Navbar() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-emerald-600 whitespace-nowrap transition-colors"
+                  className="relative px-3 py-2 rounded-md text-sm font-medium hover:bg-emerald-600 whitespace-nowrap transition-colors"
                 >
                   {link.label}
+                  {link.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                      {link.badge > 99 ? '99+' : link.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
               <button

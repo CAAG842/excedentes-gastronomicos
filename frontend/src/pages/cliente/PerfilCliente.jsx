@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import CambiarContrasena from '../../components/CambiarContrasena';
 
 const ZONAS = ['Centro', 'Villa Morra', 'Sajonia', 'San Pablo', 'Lambaré', 'San Lorenzo', 'Luque', 'Fernando de la Mora', 'Mariano Roque Alonso', 'Recoleta', 'Barrio Obrero', 'Trinidad', 'Zeballos Cué', 'Jara', 'Tacumbú'];
 
@@ -63,6 +64,10 @@ export default function PerfilCliente() {
           Guardar Cambios
         </button>
       </form>
+
+      <div className="mt-6">
+        <CambiarContrasena />
+      </div>
     </div>
   );
 }

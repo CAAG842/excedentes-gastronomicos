@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -7,6 +8,7 @@ export default function Usuarios() {
   const [mensaje, setMensaje] = useState('');
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+  const [confirmacion, setConfirmacion] = useState(null);
 
   useEffect(() => { setPagina(1); }, [filtro]);
   useEffect(() => { cargar(); }, [filtro, pagina]);
@@ -120,15 +122,15 @@ export default function Usuarios() {
                     <div className="flex gap-1">
                       {u.estado === 'PENDIENTE' && (
                         <>
-                          <button onClick={() => aprobar(u.id)} className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">Aprobar</button>
-                          <button onClick={() => rechazar(u.id)} className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Rechazar</button>
+                          <button onClick={() => setConfirmacion({ msg: `¿Aprobar a ${u.nombre}?`, fn: () => aprobar(u.id) })} className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">Aprobar</button>
+                          <button onClick={() => setConfirmacion({ msg: `¿Rechazar a ${u.nombre}?`, fn: () => rechazar(u.id) })} className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Rechazar</button>
                         </>
                       )}
                       {u.estado === 'ACTIVO' && u.rol !== 'ADMINISTRADOR' && (
-                        <button onClick={() => suspender(u.id)} className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700">Suspender</button>
+                        <button onClick={() => setConfirmacion({ msg: `¿Suspender a ${u.nombre}?`, fn: () => suspender(u.id) })} className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700">Suspender</button>
                       )}
                       {u.estado === 'SUSPENDIDO' && (
-                        <button onClick={() => reactivar(u.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Reactivar</button>
+                        <button onClick={() => setConfirmacion({ msg: `¿Reactivar a ${u.nombre}?`, fn: () => reactivar(u.id) })} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Reactivar</button>
                       )}
                     </div>
                   </td>
@@ -149,6 +151,14 @@ export default function Usuarios() {
           </div>
         )}
       </div>
+
+      {confirmacion && (
+        <ConfirmModal
+          mensaje={confirmacion.msg}
+          onConfirm={() => { confirmacion.fn(); setConfirmacion(null); }}
+          onCancel={() => setConfirmacion(null)}
+        />
+      )}
     </div>
   );
 }

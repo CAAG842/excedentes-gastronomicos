@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { generarComprobante } from '../../utils/exportReserva';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function MisReservas() {
   const [reservas, setReservas] = useState([]);
   const [mensaje, setMensaje] = useState('');
+  const [confirmacion, setConfirmacion] = useState(null);
 
   useEffect(() => { cargar(); }, []);
 
@@ -12,7 +15,6 @@ export default function MisReservas() {
   }
 
   async function cancelar(id) {
-    if (!confirm('¿Estás seguro de cancelar esta reserva?')) return;
     try {
       await api.patch(`/reservas/${id}/cancelar`);
       setMensaje('Reserva cancelada exitosamente');
@@ -66,6 +68,10 @@ export default function MisReservas() {
                   <p className="text-2xl font-bold text-emerald-700">Gs. {Number(r.montoTotal).toLocaleString()}</p>
                   <p className="text-sm text-gray-500">Cant: {r.cantidadReservada}</p>
                   <p className="text-sm text-gray-500">{new Date(r.fechaReserva).toLocaleString()}</p>
+                  <button onClick={() => generarComprobante(r)}
+                    className="mt-2 text-emerald-600 text-sm font-medium hover:text-emerald-800 hover:underline">
+                    Descargar comprobante
+                  </button>
                   {r.estadoReserva === 'PENDIENTE_RETIRO' && (
                     <div className="flex flex-col items-end gap-2 mt-2">
                       {r.pack?.comercio?.latitudEstatica && (
@@ -75,7 +81,7 @@ export default function MisReservas() {
                           Cómo llegar
                         </a>
                       )}
-                      <button onClick={() => cancelar(r.id)}
+                      <button onClick={() => setConfirmacion({ msg: '¿Estás seguro de cancelar esta reserva?', fn: () => cancelar(r.id) })}
                         className="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                         Cancelar reserva
                       </button>
@@ -86,6 +92,14 @@ export default function MisReservas() {
             </div>
           ))}
         </div>
+      )}
+
+      {confirmacion && (
+        <ConfirmModal
+          mensaje={confirmacion.msg}
+          onConfirm={() => { confirmacion.fn(); setConfirmacion(null); }}
+          onCancel={() => setConfirmacion(null)}
+        />
       )}
     </div>
   );

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function MisPacks() {
   const [packs, setPacks] = useState([]);
   const [mensaje, setMensaje] = useState('');
   const [editando, setEditando] = useState(null);
   const [formEdit, setFormEdit] = useState({});
+  const [confirmacion, setConfirmacion] = useState(null);
 
   useEffect(() => { cargar(); }, []);
 
@@ -15,7 +17,6 @@ export default function MisPacks() {
   }
 
   async function eliminar(id) {
-    if (!confirm('¿Estás seguro de eliminar este pack?')) return;
     try {
       await api.delete(`/comercio/packs/${id}`);
       setMensaje('Pack eliminado exitosamente');
@@ -120,7 +121,7 @@ export default function MisPacks() {
                   {p.estadoPack === 'DISPONIBLE' && (
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => iniciarEdicion(p)} className="flex-1 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Editar</button>
-                      <button onClick={() => eliminar(p.id)} className="flex-1 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Eliminar</button>
+                      <button onClick={() => setConfirmacion({ msg: '¿Estás seguro de eliminar este pack?', fn: () => eliminar(p.id) })} className="flex-1 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Eliminar</button>
                     </div>
                   )}
                 </>
@@ -128,6 +129,14 @@ export default function MisPacks() {
             </div>
           ))}
         </div>
+      )}
+
+      {confirmacion && (
+        <ConfirmModal
+          mensaje={confirmacion.msg}
+          onConfirm={() => { confirmacion.fn(); setConfirmacion(null); }}
+          onCancel={() => setConfirmacion(null)}
+        />
       )}
     </div>
   );
