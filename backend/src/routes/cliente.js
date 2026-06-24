@@ -6,7 +6,7 @@ export default async function clienteRoutes(fastify) {
 
   // CU-07: Cliente - Visualizar Catálogo de Ofertas
   fastify.get('/api/catalogo', { preHandler: authorize('CLIENTE') }, async (request, reply) => {
-    const { zona } = request.query;
+    const { zona, busqueda } = request.query;
 
     const where = {
       estadoPack: 'DISPONIBLE',
@@ -16,6 +16,13 @@ export default async function clienteRoutes(fastify) {
 
     if (zona) {
       where.comercio = { ciudadZona: { contains: zona, mode: 'insensitive' } };
+    }
+
+    if (busqueda) {
+      where.OR = [
+        { descripcion: { contains: busqueda, mode: 'insensitive' } },
+        { comercio: { nombreComercial: { contains: busqueda, mode: 'insensitive' } } }
+      ];
     }
 
     const packs = await prisma.packSorpresa.findMany({

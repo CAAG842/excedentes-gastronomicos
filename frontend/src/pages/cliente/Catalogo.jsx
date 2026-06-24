@@ -6,15 +6,20 @@ const ZONAS = ['', 'Centro', 'Villa Morra', 'Sajonia', 'San Pablo', 'Lambaré', 
 export default function Catalogo() {
   const [packs, setPacks] = useState([]);
   const [zona, setZona] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
   const [reservando, setReservando] = useState(null);
 
-  useEffect(() => { cargar(); }, [zona]);
+  useEffect(() => { cargar(); }, [zona, busqueda]);
 
   async function cargar() {
     try {
-      const data = await api.get(`/catalogo${zona ? `?zona=${zona}` : ''}`);
+      const params = new URLSearchParams();
+      if (zona) params.set('zona', zona);
+      if (busqueda) params.set('busqueda', busqueda);
+      const query = params.toString();
+      const data = await api.get(`/catalogo${query ? `?${query}` : ''}`);
       setPacks(data);
     } catch (err) {
       setError(err.message);
@@ -56,11 +61,20 @@ export default function Catalogo() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Catálogo de Ofertas</h1>
-        <select value={zona} onChange={e => setZona(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
-          <option value="">Todas las zonas</option>
-          {ZONAS.filter(Boolean).map(z => <option key={z} value={z}>{z}</option>)}
-        </select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar comercio o descripción..."
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+          />
+          <select value={zona} onChange={e => setZona(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm">
+            <option value="">Todas las zonas</option>
+            {ZONAS.filter(Boolean).map(z => <option key={z} value={z}>{z}</option>)}
+          </select>
+        </div>
       </div>
 
       {mensaje && (

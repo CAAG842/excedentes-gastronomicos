@@ -115,6 +115,66 @@ export default async function comercioRoutes(fastify) {
     reply.send(packs);
   });
 
+  // Editar pack (solo si está DISPONIBLE)
+  fastify.put('/api/comercio/packs/:id', { preHandler: authorize('COMERCIO') }, async (request, reply) => {
+    const packId = parseInt(request.params.id);
+    const perfil = await prisma.comercioPerfil.findUnique({ where: { usuarioId: request.user.id } });
+
+    const pack = await prisma.packSorpresa.findUnique({ where: { id: packId } });
+    if (!pack || pack.comercioId !== perfil.id) {
+      return reply.code(404).send({ error: 'Pack no encontrado' });
+    }
+    if (pack.estadoPack !== 'DISPONIBLE') {
+      return reply.code(400).send({ error: 'Solo se pueden editar packs disponibles' });
+    }
+
+    const { descripcion, precioOriginal, precioOferta, cantidadDisponible, horaLimiteRetiro } = request.body;
+
+    const data = {};
+    if (descripcion) data.descripcion = descripcion;
+    if (precioOriginal && precioOferta) {
+      const original = parseFloat(precioOriginal);
+      const oferta = parseFloat(precioOferta);
+      if (oferta > original * 0.5) {
+        return reply.code(400).send({ error: 'El precio de oferta debe ser al menos 50% menor que el original' });
+      }
+      data.precioOriginal = original;
+      data.precioOferta = oferta;
+    }
+    if (cantidadDisponible !== undefined) data.cantidadDisponible = parseInt(cantidadDisponible);
+    if (horaLimiteRetiro) {
+      const limite = new Date(horaLimiteRetiro);
+      if (limite <= new Date()) {
+        return reply.code(400).send({ error: 'La hora límite debe ser posterior a la hora actual' });
+      }
+      data.horaLimiteRetiro = limite;
+    }
+
+    const actualizado = await prisma.packSorpresa.update({ where: { id: packId }, data });
+    reply.send({ mensaje: 'Pack actualizado exitosamente', pack: actualizado });
+  });
+
+  // Eliminar pack (solo si no tiene reservas pendientes)
+  fastify.delete('/api/comercio/packs/:id', { preHandler: authorize('COMERCIO') }, async (request, reply) => {
+    const packId = parseInt(request.params.id);
+    const perfil = await prisma.comercioPerfil.findUnique({ where: { usuarioId: request.user.id } });
+
+    const pack = await prisma.packSorpresa.findUnique({
+      where: { id: packId },
+      include: { reservas: { where: { estadoReserva: 'PENDIENTE_RETIRO' } } }
+    });
+
+    if (!pack || pack.comercioId !== perfil.id) {
+      return reply.code(404).send({ error: 'Pack no encontrado' });
+    }
+    if (pack.reservas.length > 0) {
+      return reply.code(400).send({ error: 'No se puede eliminar un pack con reservas pendientes' });
+    }
+
+    await prisma.packSorpresa.delete({ where: { id: packId } });
+    reply.send({ mensaje: 'Pack eliminado exitosamente' });
+  });
+
   // CU-10: Comercio - Digitar Código de Reserva y Entregar Pack
   fastify.post('/api/comercio/validar-reserva', { preHandler: authorize('COMERCIO') }, async (request, reply) => {
     const { codigoReserva } = request.body;

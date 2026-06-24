@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import RegistroCliente from './pages/auth/RegistroCliente';
 import RegistroComercio from './pages/auth/RegistroComercio';
@@ -10,6 +11,7 @@ import RegistroComercio from './pages/auth/RegistroComercio';
 import Catalogo from './pages/cliente/Catalogo';
 import MisReservas from './pages/cliente/MisReservas';
 import Notificaciones from './pages/cliente/Notificaciones';
+import PerfilCliente from './pages/cliente/PerfilCliente';
 
 import MisPacks from './pages/comercio/MisPacks';
 import PublicarPack from './pages/comercio/PublicarPack';
@@ -33,6 +35,7 @@ function AppRoutes() {
       <Route path="/cliente/catalogo" element={<ProtectedRoute roles={['CLIENTE']}><Catalogo /></ProtectedRoute>} />
       <Route path="/cliente/reservas" element={<ProtectedRoute roles={['CLIENTE']}><MisReservas /></ProtectedRoute>} />
       <Route path="/cliente/notificaciones" element={<ProtectedRoute roles={['CLIENTE']}><Notificaciones /></ProtectedRoute>} />
+      <Route path="/cliente/perfil" element={<ProtectedRoute roles={['CLIENTE']}><PerfilCliente /></ProtectedRoute>} />
 
       <Route path="/comercio/packs" element={<ProtectedRoute roles={['COMERCIO']}><MisPacks /></ProtectedRoute>} />
       <Route path="/comercio/publicar" element={<ProtectedRoute roles={['COMERCIO']}><PublicarPack /></ProtectedRoute>} />
@@ -44,11 +47,12 @@ function AppRoutes() {
       <Route path="/admin/dashboard" element={<ProtectedRoute roles={['ADMINISTRADOR']}><DashboardAdmin /></ProtectedRoute>} />
       <Route path="/admin/auditoria" element={<ProtectedRoute roles={['ADMINISTRADOR']}><Auditoria /></ProtectedRoute>} />
 
-      <Route path="*" element={<Navigate to={usuario ? (
+      <Route path="/" element={!usuario ? <Landing /> : <Navigate to={
         usuario.rol === 'CLIENTE' ? '/cliente/catalogo' :
         usuario.rol === 'COMERCIO' ? '/comercio/packs' :
         '/admin/usuarios'
-      ) : '/login'} />} />
+      } />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }

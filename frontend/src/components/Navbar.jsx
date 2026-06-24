@@ -15,6 +15,7 @@ export default function Navbar() {
       { to: '/cliente/catalogo', label: 'Catálogo' },
       { to: '/cliente/reservas', label: 'Mis Reservas' },
       { to: '/cliente/notificaciones', label: 'Notificaciones' },
+      { to: '/cliente/perfil', label: 'Perfil' },
     ],
     COMERCIO: [
       { to: '/comercio/packs', label: 'Mis Packs' },

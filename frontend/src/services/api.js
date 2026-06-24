@@ -19,4 +19,5 @@ export const api = {
   post: (url, body) => request(url, { method: 'POST', body: body instanceof FormData ? body : JSON.stringify(body) }),
   put: (url, body) => request(url, { method: 'PUT', body: JSON.stringify(body) }),
   patch: (url, body) => request(url, { method: 'PATCH', ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }),
+  delete: (url) => request(url, { method: 'DELETE' }),
 };
