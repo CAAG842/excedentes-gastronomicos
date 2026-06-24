@@ -89,7 +89,6 @@ export default function Landing() {
 
       <footer className="bg-gray-800 text-gray-400 py-8 text-center text-sm">
         <p>GastroRescue - Plataforma de gestión de excedentes gastronómicos</p>
-        <p className="mt-1">Proyecto UNIDA 2026</p>
       </footer>
     </div>
   );
