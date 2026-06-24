@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: gastrorescue-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: COMISION_PLATAFORMA
+        value: "0.10"
+      - key: NODE_ENV
+        value: production

@@ -58,9 +58,11 @@ function AppRoutes() {
   );
 }
 
+const basename = import.meta.env.BASE_URL;
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AuthProvider>
         <div className="min-h-screen bg-gray-50">
           <AppContent />
